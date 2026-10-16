@@ -115,7 +115,7 @@ img{display:block;max-width:100%}
 .hero .media{position:absolute;inset:-12% 0 -12% 0;z-index:-2}
 .hero video,.hero .poster{width:100%;height:100%;object-fit:cover}
 .hero .veil{position:absolute;inset:0;z-index:-1;background:radial-gradient(90% 70% at 20% 30%,rgba(11,26,43,.25),rgba(11,26,43,.78) 70%),linear-gradient(180deg,rgba(11,26,43,.15) 40%,rgba(11,26,43,.96))}
-.hero .wrap{position:relative;flex:1;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:clamp(24px,5vw,72px);align-items:center;padding-top:clamp(90px,12vh,140px);padding-bottom:clamp(90px,12vh,130px)}
+.hero .wrap{position:relative;flex:1;width:100%;display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);gap:clamp(24px,5vw,72px);align-items:center;padding-top:clamp(90px,12vh,140px);padding-bottom:clamp(90px,12vh,130px)}
 @container (max-width:980px){.hero .wrap{grid-template-columns:1fr}}
 .hero .eyebrow{color:#ffe68a}
 .hero h1{font-size:clamp(46px,6.4vw,104px);margin:20px 0 20px;max-width:9.5ch}
@@ -130,15 +130,17 @@ img{display:block;max-width:100%}
 .btn.dark{background:var(--ink);color:#fff}
 .btn svg{width:18px;height:18px}
 /* mosaico de logos */
-.mosaic{position:relative;display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:clamp(64px,7.4vw,104px);gap:clamp(8px,1vw,14px)}
-.tile{position:relative;border-radius:22px;background:var(--c);display:grid;place-items:center;padding:14px 18px;box-shadow:0 22px 50px -26px rgba(0,0,0,.7);transform:translateY(40px) scale(.92);opacity:0;transition:transform 1.1s var(--ease-out),opacity .9s var(--ease-out),box-shadow .4s;transition-delay:calc(var(--i) * 90ms + .35s)}
+.mosaic{position:relative;container-type:inline-size;width:100%}
+.mgrid{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:calc((100cqw - 5 * clamp(8px,1vw,14px)) / 6 * .9);gap:clamp(8px,1vw,14px);grid-auto-flow:dense}
+.tile{position:relative;overflow:hidden;border-radius:clamp(14px,1.6vw,22px);background:var(--c);display:grid;place-items:center;padding:14px 18px;box-shadow:0 22px 50px -26px rgba(0,0,0,.7);transform:translateY(40px) scale(.92);opacity:0;transition:transform 1.1s var(--ease-out),opacity .9s var(--ease-out),box-shadow .4s;transition-delay:calc(var(--i) * 90ms + .35s)}
 .mosaic.in .tile{transform:none;opacity:1}
-.tile img{max-height:72%;max-width:86%;object-fit:contain;transition:transform .6s var(--ease-out)}
+.tile img{position:absolute;inset:16% 10%;width:80%;height:68%;object-fit:contain;transition:transform .6s var(--ease-out)}
+.tile.big img{inset:24% 12%;width:76%;height:52%}
 .tile:hover{box-shadow:0 30px 60px -24px rgba(0,0,0,.85)}
 .tile:hover img{transform:scale(1.07)}
 .tile .lbl{position:absolute;left:14px;bottom:10px;font-family:var(--f-500);font-size:12px;letter-spacing:.06em;color:var(--tc);opacity:0;transform:translateY(6px);transition:opacity .3s,transform .3s}
 .tile:hover .lbl,.tile:focus-visible .lbl{opacity:.85;transform:none}
-.mosaic{grid-auto-flow:dense}.tile{grid-column:span 2}.tile.big{grid-row:span 2}a.tile{text-decoration:none}.tile.extra{background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.22);backdrop-filter:blur(6px)}.tile.extra .t500{color:#fff;font-size:16px;display:flex;align-items:center;gap:10px}.tile.extra svg{width:18px;height:18px}
+.tile{grid-column:span 2}.tile.big{grid-row:span 2}a.tile{text-decoration:none}.tile.extra{background:rgba(255,255,255,.08);border:1.5px solid rgba(255,255,255,.22);backdrop-filter:blur(6px)}.tile.extra .t500{color:#fff;font-size:16px;display:flex;align-items:center;gap:10px}.tile.extra svg{width:18px;height:18px}
 .hero .bot{position:absolute;pointer-events:none;z-index:0;opacity:.9;filter:drop-shadow(0 20px 30px rgba(0,0,0,.45))}
 .hero .bot.b1{width:min(360px,32vw);left:-150px;bottom:-110px;transform-origin:50% 100%;rotate:20deg}
 .hero .bot.b2{width:min(260px,26vw);right:-60px;top:12%;rotate:-28deg}
@@ -188,7 +190,12 @@ img{display:block;max-width:100%}
 .chap .panel{width:100%;max-width:560px}
 .chap .pic{position:relative;min-height:100%}
 .chap .stick{position:sticky;top:var(--bar-top,72px);height:calc(100vh - var(--bar-top,72px));overflow:hidden}
-.chap .stick .ph{position:absolute;inset:-12% 0;background-size:cover;background-position:center}
+.chap .stick .slides{position:absolute;inset:-12% 0}
+.chap .stick .slide{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transform:scale(1.1);transition:opacity 1.8s var(--ease),transform 9s linear}
+.chap .stick .slide.on{opacity:1;transform:scale(1)}
+.chap .dots{position:absolute;z-index:2;left:50%;bottom:22px;translate:-50% 0;display:flex;gap:7px;padding:7px 10px;border-radius:999px;background:rgba(11,26,43,.35);backdrop-filter:blur(6px)}
+.chap .dots button{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.45);transition:width .4s var(--ease-out),background .3s}
+.chap .dots button[aria-current="true"]{width:24px;border-radius:5px;background:#fff}
 .chap .stick::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(90deg,color-mix(in srgb,var(--c) 35%,transparent),transparent 22%)}
 .chap.alt .stick::after{background:linear-gradient(270deg,color-mix(in srgb,var(--c) 35%,transparent),transparent 22%)}
 @container (max-width:900px){
@@ -373,6 +380,8 @@ ol.obj li b{font-family:var(--f-500);font-weight:500}
     }
     disconnectedCallback() {
       cancelAnimationFrame(this._raf);
+      clearInterval(this._slideTimer);
+      this._slideIO && this._slideIO.disconnect();
       removeEventListener("scroll", this._onScroll); removeEventListener("resize", this._onScroll);
       document.removeEventListener("keydown", this._onKey);
       this._io && this._io.disconnect();
@@ -453,7 +462,7 @@ ol.obj li b{font-family:var(--f-500);font-weight:500}
       <p class="sub t500 rv" style="--d:.5s">Iniciativas construídas com comunidades caiçaras, indígenas e quilombolas da Bocaina — da cartografia social à saúde, da justiça à cultura.</p>
       <div class="cta-row rv" style="--d:.65s"><button class="btn sol" data-act="explore">Explorar projetos ${I.arrow}</button><a class="btn ghost" href="${esc(this.cfg.bibliotecaUrl)}" target="_blank" rel="noopener">Biblioteca</a></div>
     </div>
-    <div class="mosaic" data-mosaic data-speed="0.08" role="list"></div>
+    <div class="mosaic" data-speed="0.08"><div class="mgrid" data-mosaic role="list"></div></div>
   </div>
   <div class="scroll-cue" aria-hidden="true">Role<i></i></div>
 </section>
@@ -520,7 +529,7 @@ ol.obj li b{font-family:var(--f-500);font-weight:500}
       const usados = ps.reduce((n, _p, i) => n + (GRANDES.has(i) ? 4 : 2), 0), sobra = (6 - (usados % 6)) % 6;
       const extras = [`<button class="tile extra" style="--i:${ps.length}" data-act="explore"><span class="t500">Todos os projetos ${I.arrow}</span></button>`, `<a class="tile extra" style="--i:${ps.length + 1}" href="${esc(this.cfg.bibliotecaUrl)}" target="_blank" rel="noopener"><span class="t500">Biblioteca ${I.arrow}</span></a>`, `<span class="tile extra" style="--i:${ps.length + 2}" aria-hidden="true"></span>`];
       this.$("[data-mosaic]").insertAdjacentHTML("beforeend", extras.slice(0, sobra / 2).join(""));
-      requestAnimationFrame(() => this.$("[data-mosaic]").classList.add("in"));
+      requestAnimationFrame(() => this.$(".mosaic").classList.add("in"));
       // índice
       this.$(".idx").innerHTML = ps.map((p) => `<button role="listitem" data-act="goto" data-slug="${esc(p.slug)}" style="--c:${p.cor};--tc:${p.tom === "escuro" ? "#16283b" : "#fff"}" aria-current="false"><i></i>${esc(p.nomeCurto || p.titulo)}</button>`).join("");
       // filtros
@@ -549,6 +558,7 @@ ol.obj li b{font-family:var(--f-500);font-weight:500}
       this.observe();
       this.collectParallax();
       this.measureBar();
+      this.setupSlides();
       this.onScroll();
     }
 
@@ -556,6 +566,8 @@ ol.obj li b{font-family:var(--f-500);font-weight:500}
       const total = String(ps.length).padStart(2, "0");
       return `<div class="chapters">${ps.map((p, i) => {
         const ph = wixImage(p.capa, 1800);
+        // capa + até 6 fotos da galeria, sem repetir
+        const fotos = [...new Set([ph, ...(p.galeria || []).filter((g) => g && g.src && (g.type || "image") === "image").slice(0, 6).map((g) => wixImage(g.src, 1600))].filter(Boolean))];
         const stats = p.numeros.slice(0, 4);
         return `<section class="chap ${p.tom} ${i % 2 ? "alt" : ""}" id="p-${esc(p.slug)}" data-chap="${esc(p.slug)}" style="--c:${p.cor}">
   <div class="txt"><div class="panel">
@@ -568,7 +580,7 @@ ol.obj li b{font-family:var(--f-500);font-weight:500}
     ${stats.length ? `<div class="stats">${stats.map((n, k) => this.statHTML(n, 0.3 + k * 0.07)).join("")}</div>` : ""}
     <button class="btn rv" style="--d:.4s" data-open="${esc(p.slug)}">Conhecer o projeto ${I.arrow}</button>
   </div></div>
-  <div class="pic">${ph ? `<div class="stick"><div class="ph" style="background-image:url('${esc(ph)}')" data-speed="0.18" data-scope="stick"></div></div>` : ""}</div>
+  <div class="pic">${fotos.length ? `<div class="stick" data-slides="${fotos.length}"><div class="slides" data-speed="0.18" data-scope="stick">${fotos.map((u, k) => `<div class="slide ${k ? "" : "on"}" ${k ? `data-bg="${esc(u)}"` : `style="background-image:url('${esc(u)}')"`}></div>`).join("")}</div>${fotos.length > 1 ? `<div class="dots">${fotos.map((_, k) => `<button data-act="slide" data-i="${k}" aria-label="Foto ${k + 1}" aria-current="${!k}"></button>`).join("")}</div>` : ""}</div>` : ""}</div>
 </section>`;
       }).join("")}</div>`;
     }
@@ -715,6 +727,32 @@ ${sobre}${numeros}${objetivos}${territorio}${rede}${galeria}${video}${this.relat
       };
       requestAnimationFrame(step);
     }
+    setupSlides() {
+      clearInterval(this._slideTimer);
+      this._visiveis = this._visiveis || new Set();
+      if (this._slideIO) this._slideIO.disconnect();
+      const sticks = this.$$(".stick[data-slides]").filter((s) => +s.dataset.slides > 1);
+      if (!sticks.length || !("IntersectionObserver" in window)) return;
+      this._slideIO = new IntersectionObserver((ents) => ents.forEach((en) => {
+        if (en.isIntersecting) { this._visiveis.add(en.target); this.preload(en.target, 1); } else this._visiveis.delete(en.target);
+      }), { rootMargin: "200px 0px" });
+      sticks.forEach((s) => this._slideIO.observe(s));
+      if (reduceMotion()) return;
+      this._slideTimer = setInterval(() => this._visiveis.forEach((s) => { if (!s.matches(":hover")) this.slideTo(s, (+(s.dataset.cur || 0) + 1)); }), 5500);
+    }
+    preload(stick, i) {
+      const sl = stick.querySelectorAll(".slide")[i % stick.querySelectorAll(".slide").length];
+      if (sl && sl.dataset.bg) { sl.style.backgroundImage = `url('${sl.dataset.bg}')`; delete sl.dataset.bg; }
+    }
+    slideTo(stick, i) {
+      const sl = [...stick.querySelectorAll(".slide")], n = sl.length;
+      if (n < 2) return;
+      i = ((i % n) + n) % n;
+      this.preload(stick, i); this.preload(stick, i + 1);
+      sl.forEach((x, k) => x.classList.toggle("on", k === i));
+      stick.querySelectorAll(".dots button").forEach((b, k) => b.setAttribute("aria-current", String(k === i)));
+      stick.dataset.cur = i;
+    }
     collectParallax() {
       this.par = this.$$("[data-speed]").map((el) => ({ el, speed: parseFloat(el.dataset.speed) || 0, scale: parseFloat(el.dataset.scale) || 0, scope: el.dataset.scope || "" }));
       this.veil = this.$("[data-veil]");
@@ -789,6 +827,7 @@ ${sobre}${numeros}${objetivos}${territorio}${rede}${galeria}${video}${this.relat
             case "lugar": s.lugares.has(a.dataset.k) ? s.lugares.delete(a.dataset.k) : s.lugares.add(a.dataset.k); this.update(); return;
             case "clear": s.temas.clear(); s.lugares.clear(); this.update(); return;
             case "close": this.closeProject(); return;
+            case "slide": this.slideTo(a.closest(".stick"), +a.dataset.i); return;
             case "gal": { const g = this.$(".page .gal"); g && g.scrollBy({ left: +a.dataset.dir * g.clientWidth * 0.8, behavior: "smooth" }); return; }
             case "lb": this.openLb(+a.dataset.i); return;
             case "lb-close": this.closeLb(); return;

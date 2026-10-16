@@ -191,7 +191,7 @@ img{display:block;max-width:100%}
 .chap .pic{position:relative;min-height:100%}
 .chap .stick{position:sticky;top:var(--bar-top,72px);height:calc(100vh - var(--bar-top,72px));overflow:hidden}
 .chap .stick .slides{position:absolute;inset:-12% 0}
-.chap .stick .slide{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transform:scale(1.1);transition:opacity 1.8s var(--ease),transform 9s linear}
+.chap .stick .slide{position:absolute;inset:0;background-size:cover;background-position:center;opacity:0;transform:scale(1.06);transition:opacity 1s var(--ease),transform 3.5s linear}
 .chap .stick .slide.on{opacity:1;transform:scale(1)}
 .chap .dots{position:absolute;z-index:2;left:50%;bottom:22px;translate:-50% 0;display:flex;gap:7px;padding:7px 10px;border-radius:999px;background:rgba(11,26,43,.35);backdrop-filter:blur(6px)}
 .chap .dots button{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.45);transition:width .4s var(--ease-out),background .3s}
@@ -738,7 +738,7 @@ ${sobre}${numeros}${objetivos}${territorio}${rede}${galeria}${video}${this.relat
       }), { rootMargin: "200px 0px" });
       sticks.forEach((s) => this._slideIO.observe(s));
       if (reduceMotion()) return;
-      this._slideTimer = setInterval(() => this._visiveis.forEach((s) => { if (!s.matches(":hover")) this.slideTo(s, (+(s.dataset.cur || 0) + 1)); }), 5500);
+      this._slideTimer = setInterval(() => this._visiveis.forEach((s) => { if (!s.matches(":hover")) this.slideTo(s, (+(s.dataset.cur || 0) + 1)); }), 2500);
     }
     preload(stick, i) {
       const sl = stick.querySelectorAll(".slide")[i % stick.querySelectorAll(".slide").length];

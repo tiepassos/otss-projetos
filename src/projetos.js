@@ -359,6 +359,44 @@ ol.obj li b{font-family:var(--f-500);font-weight:500}
   };
   const GRANDES = new Set([0, 4]); // 1º e 5º projetos ocupam dois andares
 
+
+  /* Menu do site (cabeçalho do Wix): quando fica fixo no topo, as barras do
+     componente grudam logo abaixo da parte visível dele e acompanham se ele
+     some ao rolar. Sem o atributo sticky-offset (ou com "auto") a altura é
+     medida; um número fixa o valor em px. */
+  function siteHeader() { return document.querySelector("#SITE_HEADER") || document.querySelector("header"); }
+  function headerRest(h) {
+    const cs = getComputedStyle(h), r = h.getBoundingClientRect();
+    if (r.height < 2 || cs.display === "none" || cs.visibility === "hidden" || (cs.position !== "sticky" && cs.position !== "fixed")) return 0;
+    let b = 0;
+    h.querySelectorAll("svg,img,nav,button,input,a").forEach((e) => { const q = e.getBoundingClientRect(); if (q.width > 0 && q.height > 0) b = Math.max(b, q.bottom); });
+    return Math.min(b || r.bottom, r.bottom) - r.top;
+  }
+  function stickyTracker(el, onChange) {
+    let rest = null, off = -1, raf = 0, hdr = null;
+    const read = () => {
+      const a = el.getAttribute("sticky-offset");
+      if (a && a !== "auto") return parseInt(a, 10) || 0;
+      if (!hdr || !hdr.isConnected) hdr = siteHeader();
+      if (!hdr) return 0;
+      if (rest == null) rest = headerRest(hdr);
+      return rest > 0 ? Math.max(0, Math.round(rest + hdr.getBoundingClientRect().top)) : 0;
+    };
+    const sync = () => { raf = 0; const v = read(); if (v !== off) { off = v; el.style.setProperty("--sticky-top", v + "px"); onChange && onChange(v); } };
+    const onScroll = () => { if (!raf) raf = requestAnimationFrame(sync); };
+    const reset = () => { rest = null; onScroll(); };
+    addEventListener("scroll", onScroll, { passive: true });
+    addEventListener("resize", reset);
+    addEventListener("load", reset);
+    const timers = [400, 1500, 4000].map((t) => setTimeout(reset, t));
+    sync();
+    return {
+      get off() { return Math.max(off, 0); },
+      reset,
+      stop() { removeEventListener("scroll", onScroll); removeEventListener("resize", reset); removeEventListener("load", reset); timers.forEach(clearTimeout); cancelAnimationFrame(raf); },
+    };
+  }
+
   class OtssProjetos extends HTMLElement {
     static get observedAttributes() { return ["sticky-offset"]; }
     constructor() {
@@ -369,6 +407,7 @@ ol.obj li b{font-family:var(--f-500);font-weight:500}
       this.par = [];
     }
     connectedCallback() {
+      if (!this._sticky) this._sticky = stickyTracker(this, () => this.measureBar());
       if (this._booted) return;
       this._booted = true;
       ["client-id", "site-id", "video-hero", "biblioteca-url"].forEach((a) => { const v = this.getAttribute(a); if (v) this.cfg[a.replace(/-(\w)/g, (_, c) => c.toUpperCase())] = v; });
@@ -379,6 +418,7 @@ ol.obj li b{font-family:var(--f-500);font-weight:500}
       this.load();
     }
     disconnectedCallback() {
+      this._sticky && this._sticky.stop(); this._sticky = null;
       cancelAnimationFrame(this._raf);
       clearInterval(this._slideTimer);
       this._slideIO && this._slideIO.disconnect();
@@ -386,7 +426,8 @@ ol.obj li b{font-family:var(--f-500);font-weight:500}
       document.removeEventListener("keydown", this._onKey);
       this._io && this._io.disconnect();
     }
-    attributeChangedCallback(n, _o, v) { if (n === "sticky-offset") this.style.setProperty("--sticky-top", (parseInt(v, 10) || 0) + "px"); }
+    attributeChangedCallback(n) { if (n === "sticky-offset" && this._sticky) this._sticky.reset(); }
+    stickyOff() { return this._sticky ? this._sticky.off : 0; }
     $(s) { return this.root.querySelector(s); }
     $$(s) { return [...this.root.querySelectorAll(s)]; }
 
@@ -766,7 +807,7 @@ ${sobre}${numeros}${objetivos}${territorio}${rede}${galeria}${video}${this.relat
     }
     measureBar() {
       const bar = this.$(".bar"); if (!bar) return;
-      const off = parseInt(this.getAttribute("sticky-offset"), 10) || 0;
+      const off = this.stickyOff();
       this.style.setProperty("--bar-top", off + bar.offsetHeight + "px");
     }
     onScroll() {
@@ -817,7 +858,7 @@ ${sobre}${numeros}${objetivos}${territorio}${rede}${galeria}${video}${this.relat
             case "goto": {
               if (s.view !== "narrativa") { s.view = "narrativa"; this.update(); }
               const el = this.$(`#p-${a.dataset.slug}`); if (!el) return;
-              const off = (parseInt(this.getAttribute("sticky-offset"), 10) || 0);
+              const off = this.stickyOff();
               scrollTo({ top: el.getBoundingClientRect().top + scrollY - off + 2, behavior: reduceMotion() ? "auto" : "smooth" });
               return;
             }
@@ -858,7 +899,7 @@ ${sobre}${numeros}${objetivos}${territorio}${rede}${galeria}${video}${this.relat
       hero.addEventListener("pointerleave", () => this.$$(".tile").forEach((t) => (t.style.translate = "")));
     }
     scrollToMain() {
-      const off = parseInt(this.getAttribute("sticky-offset"), 10) || 0;
+      const off = this.stickyOff();
       scrollTo({ top: this.$(".bar").getBoundingClientRect().top + scrollY - off, behavior: reduceMotion() ? "auto" : "smooth" });
     }
     openLb(i) {

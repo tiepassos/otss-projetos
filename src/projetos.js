@@ -151,7 +151,7 @@ img{display:block;max-width:100%}
 
 /* ===== BARRA (índice + filtros) ===== */
 .bar{position:sticky;top:var(--sticky-top);z-index:30;background:rgba(251,247,236,.9);backdrop-filter:blur(14px) saturate(1.3);-webkit-backdrop-filter:blur(14px) saturate(1.3);border-bottom:1px solid var(--line);transition:background .5s}
-.bar::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:var(--sticky-top);background:inherit;opacity:0;transition:opacity .25s;pointer-events:none}
+.bar::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:var(--sticky-top);background:var(--paper);opacity:0;transition:opacity .25s;pointer-events:none}
 .bar[data-stuck]::before{opacity:1}
 .bar .wrap{display:flex;align-items:center;gap:14px;min-height:68px}
 .idx{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0;padding:10px 24px 10px 0;position:relative;mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent);-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent)}

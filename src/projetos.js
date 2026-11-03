@@ -151,6 +151,8 @@ img{display:block;max-width:100%}
 
 /* ===== BARRA (índice + filtros) ===== */
 .bar{position:sticky;top:var(--sticky-top);z-index:30;background:rgba(251,247,236,.9);backdrop-filter:blur(14px) saturate(1.3);-webkit-backdrop-filter:blur(14px) saturate(1.3);border-bottom:1px solid var(--line);transition:background .5s}
+.bar::before{content:"";position:absolute;left:0;right:0;bottom:100%;height:var(--sticky-top);background:inherit;opacity:0;transition:opacity .25s;pointer-events:none}
+.bar[data-stuck]::before{opacity:1}
 .bar .wrap{display:flex;align-items:center;gap:14px;min-height:68px}
 .idx{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;flex:1;min-width:0;padding:10px 24px 10px 0;position:relative;mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent);-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 48px),transparent)}
 .idx::-webkit-scrollbar{display:none}
@@ -371,14 +373,18 @@ ol.obj li b{font-family:var(--f-500);font-weight:500}
     // o que está visível agora (submenus fechados ficam de fora)
     return [...h.querySelectorAll("svg,img,nav,button,input")].filter((e) => { const q = e.getBoundingClientRect(); return q.width > 0 && q.height > 0; });
   }
-  function stickyTracker(el, onChange) {
+  function stickyTracker(el, onChange, barOf) {
     let parts = null, hdr = null, off = -1, raf = 0, until = 0;
     const read = () => {
       const a = el.getAttribute("sticky-offset");
       if (a && a !== "auto") return parseInt(a, 10) || 0;
       if (!hdr || !hdr.isConnected) { hdr = siteHeader(); parts = null; }
       if (!hdr) return 0;
-      if (!parts) parts = headerParts(hdr);
+      if (!parts) {
+        parts = headerParts(hdr);
+        // o menu do Wix vem sem z-index: sem isso o conteúdo da página passa por cima dele
+        if (parts.length && getComputedStyle(hdr).zIndex === "auto") hdr.style.zIndex = "60";
+      }
       if (!parts.length) return 0;
       const hb = hdr.getBoundingClientRect().bottom;
       let b = 0;
@@ -389,6 +395,8 @@ ol.obj li b{font-family:var(--f-500);font-weight:500}
     const tick = () => {
       const v = read();
       if (v !== off) { off = v; el.style.setProperty("--sticky-top", v + "px"); onChange && onChange(v); }
+      const bar = barOf && barOf();
+      if (bar) bar.toggleAttribute("data-stuck", v > 0 && bar.getBoundingClientRect().top <= v + 1);
       raf = performance.now() < until ? requestAnimationFrame(tick) : 0;
     };
     const wake = () => { until = performance.now() + 900; if (!raf) raf = requestAnimationFrame(tick); };
@@ -415,7 +423,7 @@ ol.obj li b{font-family:var(--f-500);font-weight:500}
       this.par = [];
     }
     connectedCallback() {
-      if (!this._sticky) this._sticky = stickyTracker(this, () => this.measureBar());
+      if (!this._sticky) this._sticky = stickyTracker(this, () => this.measureBar(), () => this.$(".bar"));
       if (this._booted) return;
       this._booted = true;
       ["client-id", "site-id", "video-hero", "biblioteca-url"].forEach((a) => { const v = this.getAttribute(a); if (v) this.cfg[a.replace(/-(\w)/g, (_, c) => c.toUpperCase())] = v; });

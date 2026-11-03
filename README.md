@@ -38,7 +38,9 @@ A coleção original **PROJETOS** não foi alterada.
 
 Igual à Biblioteca: **Elemento personalizado** → URL do servidor `https://tiepassos.github.io/otss-projetos/src/projetos.js` → tag `otss-projetos`, largura total e altura automática.
 
-Atributos opcionais: `sticky-offset` (altura do cabeçalho fixo do site), `video-hero`, `biblioteca-url`, `fonte-titulo` / `fonte-titulo-familia` (Museo 900), `fonte-subtitulo` (Museo 500).
+**Menu do site:** o menu continua sendo o do Wix. A barra de projetos mede sozinha a parte visível do cabeçalho fixo do Wix e gruda logo abaixo dele. Quando o menu se esconde ao rolar para baixo, a barra sobe até o topo, e volta a descer quando ele reaparece. No celular, onde o menu do site é o botão flutuante, a barra fica no topo.
+
+Atributos opcionais: `sticky-offset` (por padrão `auto`; um número em px fixa a distância do topo), `video-hero`, `biblioteca-url`, `fonte-titulo` / `fonte-titulo-familia` (Museo 900), `fonte-subtitulo` (Museo 500).
 
 ### Fontes
 Títulos em **Museo 900** e subtítulos em **Museo 500**. A Museo 500 já é uma fonte do site no Wix (usada automaticamente). A Museo 900 é comercial e não está no repositório: suba o arquivo (com licença de webfont) no Wix e informe a URL em `fonte-titulo`. Sem isso, aparece para quem a tem instalada; nos demais casos, a reserva (Bitter 900).

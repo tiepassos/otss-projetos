@@ -67,6 +67,20 @@
       safeStore.set(TOKEN_KEY, this.tok);
       return this.tok.access;
     }
+    async get(path) {
+      const r = await fetch(API + path, { headers: { Authorization: await this.token() } });
+      if (!r.ok) throw new Error(`Erro ${r.status} em ${path}`);
+      return r.json();
+    }
+    async posts() {
+      const out = [];
+      for (let offset = 0; offset < 3000; offset += 100) {
+        const j = await this.get(`/blog/v3/posts?paging.limit=100&paging.offset=${offset}&fieldsets=URL`);
+        out.push(...(j.posts || []));
+        if (!j.posts || j.posts.length < 100) break;
+      }
+      return out;
+    }
     async query(collection, query = {}, refs = []) {
       const r = await fetch(API + "/wix-data/v2/items/query", { method: "POST", headers: { "Content-Type": "application/json", Authorization: await this.token() }, body: JSON.stringify({ dataCollectionId: collection, query: { paging: { limit: 1000 }, ...query }, includeReferencedItems: refs }) });
       if (!r.ok) throw new Error(`Erro ${r.status} em ${collection}`);
@@ -317,6 +331,33 @@ ol.obj li b{font-family:var(--f-500);font-weight:500}
 .rel b{font-family:var(--f-500);font-weight:500;font-size:17px;line-height:1.3}
 .rel span{font-size:13.5px;color:var(--ink-3)}
 .links{display:flex;flex-wrap:wrap;gap:12px;margin-top:26px}
+/* vídeos relacionados: miniatura que vira o player no lugar */
+.mvs{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:18px}
+.mv{display:flex;flex-direction:column;gap:10px}
+.mv-ph,.mv iframe{position:relative;display:block;width:100%;aspect-ratio:16/9;border:0;border-radius:16px;overflow:hidden;background:#0b1a2b}
+.mv.pod iframe{aspect-ratio:auto;height:232px}
+.mv-ph img{width:100%;height:100%;object-fit:cover;transition:transform .6s var(--ease)}
+.mv-ph i{position:absolute;inset:0;margin:auto;width:60px;height:60px;border-radius:50%;display:grid;place-items:center;background:rgba(255,255,255,.92);color:#c4302b;box-shadow:0 10px 30px rgba(0,0,0,.35);transition:transform .3s var(--ease)}
+.mv.pod .mv-ph i{color:#15803d}
+.mv-ph i svg{width:26px;height:26px}
+.mv-ph:hover img{transform:scale(1.05)}.mv-ph:hover i{transform:scale(1.1)}
+.mv-txt small{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-3)}
+.mv-txt b{display:block;font-family:var(--f-500);font-weight:500;font-size:17px;line-height:1.3}
+/* notícias relacionadas */
+.nts{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr));gap:18px}
+.nt{display:flex;flex-direction:column;border-radius:18px;overflow:hidden;background:var(--card);border:1px solid var(--line);text-decoration:none;color:inherit;transition:transform .4s var(--ease),box-shadow .4s}
+.nt:hover{transform:translateY(-4px);box-shadow:0 20px 40px -26px rgba(0,0,0,.5)}
+.nt-ph{aspect-ratio:16/10;overflow:hidden;background:var(--paper-2)}.nt-ph img{width:100%;height:100%;object-fit:cover}
+.nt-txt{display:flex;flex-direction:column;gap:6px;padding:16px 20px 20px}
+.nt-txt small{font-size:12px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--azul)}
+.nt-txt b{font-family:var(--f-500);font-weight:500;font-size:18px;line-height:1.3}
+.nt-txt span{font-size:14px;color:var(--ink-3);line-height:1.5}
+/* links relacionados */
+.plinks{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,280px),1fr));gap:12px}
+.plinks a{display:grid;grid-template-columns:1fr auto;align-items:center;gap:2px 12px;padding:16px 20px;border-radius:16px;background:var(--card);border:1px solid var(--line);text-decoration:none;color:inherit;transition:border-color .3s,transform .3s var(--ease)}
+.plinks a:hover{border-color:var(--ink);transform:translateY(-2px)}
+.plinks span{font-weight:700;line-height:1.3}.plinks small{grid-column:1;font-size:12.5px;color:var(--ink-3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.plinks svg{grid-row:1/span 2;grid-column:2;width:18px;height:18px;opacity:.6}
 .next{display:block;width:100%;text-align:left;background:var(--c);color:var(--tc);padding:clamp(60px,10vw,130px) 0;position:relative;overflow:hidden;isolation:isolate}
 .next .ph{position:absolute;inset:-20% 0;background-size:cover;background-position:center;z-index:-2;opacity:.35;transition:opacity .6s,transform 1.4s var(--ease-out)}
 .next:hover .ph{opacity:.55;transform:scale(1.04)}
@@ -498,7 +539,19 @@ ol.obj li b{font-family:var(--f-500);font-weight:500}
           this.client.query("BibliotecaAcervo", { filter: { projetos: { $hasSome: nomes } } }, ["tipo"]),
           this.client.query("BibliotecaMidia", { filter: { projetos: { $hasSome: nomes } } }),
         ]);
-        this.related = { acervo: acervo.filter((d) => d.visivel !== false), midia: midia.filter((d) => d.visivel !== false) };
+        // notícias do blog do site; se o blog falhar, a página segue sem elas
+        const [posts, cats, tags] = await Promise.all([
+          this.client.posts().catch(() => []),
+          this.client.get("/blog/v3/categories?paging.limit=100").then((j) => j.categories || []).catch(() => []),
+          this.client.get("/blog/v3/tags?paging.limit=100").then((j) => j.tags || []).catch(() => []),
+        ]);
+        const rot = new Map([...cats.map((c) => [c.id, c.label]), ...tags.map((t) => [t.id, t.label])]);
+        const noticias = posts.filter((p) => p.language !== "en").map((p) => ({
+          id: p.id, titulo: p.title || "", resumo: p.excerpt || "", data: String(p.firstPublishedDate || "").slice(0, 10),
+          url: p.url ? (typeof p.url === "string" ? p.url : (p.url.base || "") + (p.url.path || "")) : "",
+          img: p.media?.wixMedia?.image?.id || "", rotulos: [...(p.categoryIds || []), ...(p.tagIds || [])].map((id) => rot.get(id)).filter(Boolean).concat(p.hashtags || []),
+        }));
+        this.related = { acervo: acervo.filter((d) => d.visivel !== false), midia: midia.filter((d) => d.visivel !== false), noticias };
         if (this.openSlug) { const box = this.$('[data-slot="rel"]'); if (box) box.outerHTML = this.relatedHTML(this.bySlug.get(this.openSlug)); }
       } catch (e) { console.warn("[otss-projetos] relacionados indisponíveis", e); }
     }
@@ -720,7 +773,6 @@ ol.obj li b{font-family:var(--f-500);font-weight:500}
       const galeria = gal.length ? `<section class="psec tint"><div class="wrap"><header class="shd"><div><p class="kick rv">Galeria</p><h2 class="t900 words" data-words>Nos territórios</h2></div><div class="gal-ctrl rv"><button class="round" data-act="gal" data-dir="-1" aria-label="Anterior">${I.arrowL}</button><button class="round" data-act="gal" data-dir="1" aria-label="Próximo">${I.arrowR}</button></div></header></div>
   <div class="gal rv">${gal.map((g, k) => { const r = imgRatio(g.src); return `<button data-act="lb" data-i="${k}" style="--r:${r.toFixed(3)}" aria-label="Ampliar foto ${k + 1}"><img src="${esc(wixImage(g.src, Math.min(1400, Math.round(920 * r)), 920))}" alt="${esc(g.title || g.alt || "")}" loading="lazy"></button>`; }).join("")}</div></section>` : "";
       const video = vid ? sec("Vídeo", "Assista", `<div class="vid rv"><video preload="none" poster="${esc(vid.poster)}" playsinline controls hidden src="${esc(vid.src)}"></video><button class="play" data-act="play" aria-label="Assistir ao vídeo"><i>${I.play}</i></button><img src="${esc(vid.poster)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-1"></div>`) : "";
-      const links = p.linkExterno || p.documento ? `<section class="psec" style="padding-top:0"><div class="wrap"><div class="links">${p.linkExterno ? `<a class="btn dark" href="${esc(p.linkExterno)}" target="_blank" rel="noopener">Mais informações ${I.ext}</a>` : ""}${p.documento ? `<a class="btn dark" href="${esc(p.documento)}" target="_blank" rel="noopener">Baixar documento ${I.pdf}</a>` : ""}</div></div></section>` : "";
       const proximo = next && next !== p ? `<button class="next ${next.tom}" style="--c:${next.cor}" data-open="${esc(next.slug)}">${next.capa ? `<div class="ph" style="background-image:url('${esc(wixImage(next.capa, 1800))}')" data-speed="0.25" data-scope="page"></div>` : ""}<div class="wrap"><small>Próximo projeto</small><strong class="t900">${esc(next.nomeCurto || next.titulo)} ${I.arrowR}</strong></div></button>` : "";
       return `<button class="close" data-act="close" aria-label="Fechar projeto">${I.x}</button>
 <header class="phero ${p.tom}">
@@ -732,16 +784,75 @@ ol.obj li b{font-family:var(--f-500);font-weight:500}
     <div class="meta rv" style="--d:.4s">${[p.formato, p.periodo, p.status].filter(Boolean).map((m) => `<span class="pill">${esc(m)}</span>`).join("")}${p.temas.map((t) => `<span class="pill">${esc(t.nome)}</span>`).join("")}</div>
   </div>
 </header>
-${sobre}${numeros}${objetivos}${territorio}${rede}${galeria}${video}${this.relatedHTML(p)}${links}${proximo}`;
+${sobre}${numeros}${objetivos}${territorio}${rede}${galeria}${video}${this.relatedHTML(p)}${this.linksHTML(p)}${proximo}`;
     }
 
+    // notícias do blog ligadas ao projeto: categoria/tag com o nome dele ("Projeto X", "Rede X", "projetox"),
+    // o texto "Projeto X"/"Rede X" no título ou no resumo, o nome completo do projeto, nomes compostos ou siglas (EITS);
+    // o campo "Termos para notícias" do CMS soma termos à mão (ex.: um nome que a busca automática não pega)
+    noticiasDe(p) {
+      const k = norm(p.nomeCurto || ""); if (!k || !this.related?.noticias) return [];
+      const tit = norm(p.titulo || ""); const junto = (x) => x.replace(/[^a-z0-9]/g, "");
+      const sigla = /^[A-Z]{2,6}$/.test(p.nomeCurto || ""); const composto = k.split(" ").length > 1;
+      const termos = (p.termosNoticias || []).map(norm).map((t) => t.trim()).filter((t) => t.length > 2);
+      const esc = (x) => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      const re = new RegExp("(projeto|projetos|rede|programa) " + esc(k) + "([^a-z0-9]|$)");
+      const exato = new RegExp("(^|[^a-z0-9])" + esc(k) + "([^a-z0-9]|$)");
+      return this.related.noticias.filter((n) => {
+        const rot = n.rotulos.map(norm);
+        if (rot.some((l) => l === k || l === tit || junto(l) === junto(k) || junto(l) === "projeto" + junto(k) || junto(l) === "rede" + junto(k))) return true;
+        const t = norm(n.titulo + " " + n.resumo);
+        if (re.test(t) || (tit.length > 12 && t.includes(tit)) || ((sigla || composto) && exato.test(t))) return true;
+        return termos.some((x) => t.includes(x) || rot.includes(x));
+      }).sort((a, b) => b.data.localeCompare(a.data));
+    }
+    linksHTML(p) {
+      // "Nome | https://…" por linha no CMS; o site e o documento do projeto entram junto
+      const lista = (p.links || []).map((l) => { const m = String(l).split("|"); const url = (m.length > 1 ? m.slice(1).join("|") : m[0]).trim(); return { nome: (m.length > 1 ? m[0] : url.replace(/^https?:\/\/(www\.)?/, "").split("/")[0]).trim(), url }; }).filter((l) => /^https?:\/\//.test(l.url));
+      if (p.linkExterno) lista.unshift({ nome: "Site do projeto", url: p.linkExterno });
+      if (p.documento) lista.push({ nome: "Documento do projeto", url: p.documento, doc: true });
+      if (p.nomeCurto) lista.push({ nome: "Tudo do projeto na Biblioteca", url: `${this.cfg.bibliotecaUrl}#projeto=${encodeURIComponent(p.nomeCurto)}` });
+      if (!lista.length) return "";
+      return `<section class="psec"><div class="wrap"><header class="shd"><div><p class="kick rv">Para saber mais</p><h2 class="t900 words" data-words>Links relacionados</h2></div></header>
+  <div class="plinks rv">${lista.map((l) => `<a href="${esc(l.url)}" target="_blank" rel="noopener"><span>${esc(l.nome)}</span><small>${esc(l.url.replace(/^https?:\/\/(www\.)?/, "").slice(0, 60))}</small>${l.doc ? I.pdf : I.ext}</a>`).join("")}</div></div></section>`;
+    }
     relatedHTML(p) {
       if (!p) return "";
+      return `<div data-slot="rel">${this.related ? this.videosHTML(p) + this.noticiasHTML(p) + this.producaoHTML(p) : ""}</div>`;
+    }
+    videosHTML(p) {
+      const k = norm(p.nomeCurto || "");
+      const md = (this.related.midia || []).filter((d) => (d.projetos || []).some((x) => norm(x) === k)).sort((a, b) => String(b.data || "").localeCompare(String(a.data || "")));
+      if (!md.length) return "";
+      const ytId = (u) => (String(u || "").match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/) || [])[1] || "";
+      const spId = (u) => (String(u || "").match(/open\.spotify\.com\/episode\/([\w]+)/) || [])[1] || "";
+      const card = (d) => {
+        const yt = ytId(d.url), sp = spId(d.url), pod = d.tipo === "podcast";
+        const thumb = d.capa ? wixImage(d.capa, 800) : yt ? `https://i.ytimg.com/vi/${yt}/hqdefault.jpg` : "";
+        const embed = yt ? `https://www.youtube-nocookie.com/embed/${yt}?autoplay=1&rel=0` : sp ? `https://open.spotify.com/embed/episode/${sp}?utm_source=generator` : "";
+        return `<article class="mv${pod ? " pod" : ""}">${embed ? `<button class="mv-ph" data-act="mvid" data-src="${esc(embed)}" data-pod="${pod ? 1 : ""}" aria-label="Tocar ${esc(d.titulo)}">` : `<a class="mv-ph" href="${esc(d.url)}" target="_blank" rel="noopener">`}
+      ${thumb ? `<img src="${esc(thumb)}" alt="" loading="lazy">` : ""}<i>${I.play}</i>${embed ? "</button>" : "</a>"}
+      <div class="mv-txt"><small>${pod ? "Podcast" : "Vídeo"}${d.duracao ? " · " + esc(d.duracao) : ""}</small><b>${esc(d.titulo)}</b></div></article>`;
+      };
+      return `<section class="psec"><div class="wrap"><header class="shd"><div><p class="kick">Assista e ouça</p><h2 class="t900">Vídeos relacionados</h2></div></header>
+  <div class="mvs">${md.slice(0, 6).map(card).join("")}</div></div></section>`;
+    }
+    noticiasHTML(p) {
+      const ns = this.noticiasDe(p);
+      if (!ns.length) return "";
+      const data = (d) => d ? new Date(d + "T12:00:00").toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" }) : "";
+      const card = (n) => `<a class="nt" href="${esc(n.url)}" target="_blank" rel="noopener">${n.img ? `<span class="nt-ph"><img src="${esc(`https://static.wixstatic.com/media/${n.img}/v1/fill/w_640,h_400,al_c,q_80,enc_auto/noticia.jpg`)}" alt="" loading="lazy"></span>` : ""}
+      <span class="nt-txt"><small>${data(n.data)}</small><b>${esc(n.titulo)}</b>${n.resumo ? `<span>${esc(n.resumo.slice(0, 140))}${n.resumo.length > 140 ? "…" : ""}</span>` : ""}</span></a>`;
+      const todas = `${this.cfg.bibliotecaUrl}#secao=materias&projeto=${encodeURIComponent(p.nomeCurto)}`;
+      return `<section class="psec tint"><div class="wrap"><header class="shd"><div><p class="kick">No site do OTSS</p><h2 class="t900">Notícias relacionadas</h2></div>${ns.length > 6 ? `<a class="btn dark" href="${esc(todas)}" target="_blank" rel="noopener">Ver as ${ns.length} notícias ${I.arrow}</a>` : ""}</header>
+  <div class="nts">${ns.slice(0, 6).map(card).join("")}</div></div></section>`;
+    }
+    producaoHTML(p) {
+      if (!p) return "";
       const k = norm(p.nomeCurto);
-      if (!this.related) return `<div data-slot="rel"></div>`;
       const ac = this.related.acervo.filter((d) => (d.projetos || []).some((x) => norm(x) === k)).sort((a, b) => (b.ano || 0) - (a.ano || 0));
-      const md = this.related.midia.filter((d) => (d.projetos || []).some((x) => norm(x) === k));
-      if (!ac.length && !md.length) return `<div data-slot="rel"></div>`;
+      const md = [];
+      if (!ac.length) return "";
       const base = this.cfg.bibliotecaUrl;
       const card = (href, tipo, cor, titulo, sub) => `<a href="${esc(href)}" target="_blank" rel="noopener" style="--k:${cor}"><small>${esc(tipo)}</small><b>${esc(titulo)}</b>${sub ? `<span>${esc(sub)}</span>` : ""}</a>`;
       const itens = [
@@ -749,7 +860,7 @@ ${sobre}${numeros}${objetivos}${territorio}${rede}${galeria}${video}${this.relat
         ...md.slice(0, 6).map((d) => card(`${base}#item=${d._id}`, d.tipo === "podcast" ? "Podcast" : "Vídeo", d.tipo === "podcast" ? "#15803d" : "#c4302b", d.titulo, d.duracao || "")),
       ];
       const total = ac.length + md.length;
-      return `<section class="psec tint" data-slot="rel"><div class="wrap"><header class="shd"><div><p class="kick">Na Biblioteca</p><h2 class="t900">Produção do projeto</h2></div><a class="btn dark" href="${esc(base)}#projeto=${encodeURIComponent(p.nomeCurto)}" target="_blank" rel="noopener">Ver todos os ${total} ${I.arrow}</a></header><div class="rel">${itens.join("")}</div></div></section>`;
+      return `<section class="psec"><div class="wrap"><header class="shd"><div><p class="kick">Na Biblioteca</p><h2 class="t900">Produção do projeto</h2></div><a class="btn dark" href="${esc(base)}#projeto=${encodeURIComponent(p.nomeCurto)}" target="_blank" rel="noopener">Ver todos os ${total} ${I.arrow}</a></header><div class="rel">${itens.join("")}</div></div></section>`;
     }
 
     /* ----- movimento ----- */
@@ -871,6 +982,7 @@ ${sobre}${numeros}${objetivos}${territorio}${rede}${galeria}${video}${this.relat
         if (act) {
           switch (act) {
             case "explore": this.scrollToMain(); return;
+            case "mvid": { const f = document.createElement("iframe"); f.src = a.dataset.src; f.title = a.getAttribute("aria-label") || "Vídeo"; f.allow = "autoplay; encrypted-media; picture-in-picture; fullscreen; clipboard-write"; f.allowFullscreen = true; f.loading = "lazy"; a.replaceWith(f); return; }
             case "goto": {
               if (s.view !== "narrativa") { s.view = "narrativa"; this.update(); }
               const el = this.$(`#p-${a.dataset.slug}`); if (!el) return;

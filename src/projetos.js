@@ -9,7 +9,8 @@
     clientId: "cbb20194-95fa-4ccf-a02b-fce35da284af",
     siteId: "eef6fc1a-2e9b-47d7-b175-68ea9b7828ab",
     videoHero: "8d49b9_4daae7d2cc3d4ca3b0b224a5528dd2b5",
-    bibliotecaUrl: "https://tiepassos.github.io/otss-biblioteca/",
+    // dentro do site do OTSS a Biblioteca é a página /biblioteca; fora dele (prévia), a do GitHub
+    bibliotecaUrl: /(^|\.)otss\.org\.br$/.test(location.hostname) ? location.origin + "/biblioteca" : "https://tiepassos.github.io/otss-biblioteca/",
   };
   const API = "https://www.wixapis.com";
   const TOKEN_KEY = "otss-projetos-token";

@@ -11,7 +11,7 @@ Nova página de **Projetos** do site [otss.org.br](https://www.otss.org.br), em 
 - **Barra fixa** com o índice de projetos (acompanha a rolagem e assume a cor do projeto na tela), filtros por tema/eixo e por município, e dois modos de leitura:
   - **Narrativa**: um capítulo por projeto, com foto fixa em parallax tingida na cor do projeto, logo, chamada, números em contagem animada e botão para a página completa;
   - **Mosaico**: cards na cor do projeto, com a foto revelada ao passar o mouse.
-- **Página do projeto** (abre com transição circular a partir do clique; link direto `#projeto=povos`): capa em parallax, Sobre, Em números, Objetivos, Território (municípios + mapa), Quem executa (parceiros em faixa contínua), Galeria (rolagem lateral + ampliação), Vídeo, **Vídeos relacionados** (vídeos e podcasts da Biblioteca marcados com o projeto, tocam ali mesmo), **Notícias relacionadas** (do blog do site), **Produção do projeto na Biblioteca**, **Links relacionados** e Próximo projeto.
+- **Página do projeto** (abre com transição circular a partir do clique; link direto `#projeto=povos`): capa em parallax, Sobre, Em números, Objetivos, Território (municípios + mapa), Quem executa (parceiros em faixa contínua), Galeria (rolagem lateral + ampliação), Vídeo, **Vídeos relacionados** (links colados no CMS e vídeos e podcasts da Biblioteca marcados com o projeto, tocam ali mesmo), **Notícias relacionadas** (do blog do site), **Produção do projeto na Biblioteca**, **Links relacionados** e Próximo projeto.
 
 ### Como as notícias se ligam ao projeto
 Automático, a partir do blog do site: categoria ou tag com o nome do projeto (ex.: `Rede Marangatu`, `projetopovos`), o texto “Projeto X” ou “Rede X” no título ou no resumo, o nome completo do projeto, ou o nome curto quando é composto ou uma sigla (EITS). O campo **Termos para notícias** soma termos à mão.
@@ -35,6 +35,7 @@ A coleção original **PROJETOS** não foi alterada.
 | Foto de capa, Galeria, Mapa, Vídeo | Mídias da página |
 | Site / Documento | Entram em **Links relacionados** (“Site do projeto” e “Documento do projeto”) |
 | Links relacionados | Um link por item, no formato `Nome | https://…` (ex.: `Relatório 2025 | https://…`). Aparecem no bloco **Links relacionados**, junto com o site, o documento e “Tudo do projeto na Biblioteca” |
+| Vídeos relacionados | Um vídeo por item: o link do YouTube, Vimeo ou Spotify, ou `Título | link` (ex.: `Documentário 2023 | https://youtu.be/…`). Tocam na própria página e aparecem antes dos vídeos da Biblioteca marcados com o projeto. Sem título, aparece “Vídeo do projeto”. Outros links abrem em nova aba |
 | Termos para notícias | Opcional. Palavras que ligam notícias do blog ao projeto quando a ligação automática não pega (ex.: um nome próprio) |
 | Temas / Áreas | Ligados aos 17 temas da Biblioteca (cores dos eixos) e ao filtro |
 | Ordem, Destaque, Visível | Ordem na página; desmarcar *Visível* esconde sem apagar |

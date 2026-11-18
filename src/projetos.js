@@ -823,20 +823,32 @@ ${sobre}${numeros}${objetivos}${territorio}${rede}${galeria}${video}${this.relat
     }
     videosHTML(p) {
       const k = norm(p.nomeCurto || "");
-      const md = (this.related.midia || []).filter((d) => (d.projetos || []).some((x) => norm(x) === k)).sort((a, b) => String(b.data || "").localeCompare(String(a.data || "")));
-      if (!md.length) return "";
-      const ytId = (u) => (String(u || "").match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/) || [])[1] || "";
+      const ytId = (u) => (String(u || "").match(/(?:youtu\.be\/|v=|embed\/|shorts\/|live\/)([\w-]{11})/) || [])[1] || "";
       const spId = (u) => (String(u || "").match(/open\.spotify\.com\/episode\/([\w]+)/) || [])[1] || "";
+      const vmId = (u) => (String(u || "").match(/vimeo\.com\/(?:video\/)?(\d+)/) || [])[1] || "";
+      const chave = (u) => ytId(u) || String(u || "").replace(/[?#].*$/, "").replace(/\/$/, "");
+      // 1) vídeos colados no CMS, campo "Vídeos relacionados": um por item, "Título | link" ou só o link (todos aparecem, na ordem do CMS)
+      const doCms = (p.videosRelacionados || []).map((l) => {
+        const s = String(l || "").trim(), i = s.lastIndexOf("|");
+        const url = (i >= 0 ? s.slice(i + 1) : s).trim(), titulo = i >= 0 ? s.slice(0, i).trim() : "";
+        return { url, titulo, tipo: /spotify\.com/.test(url) ? "podcast" : "video" };
+      }).filter((d) => /^https?:\/\//i.test(d.url));
+      // 2) vídeos e podcasts da Biblioteca marcados com o projeto, sem repetir os do CMS; completam até 6
+      const vistos = new Set(doCms.map((d) => chave(d.url)));
+      const daBib = (this.related.midia || []).filter((d) => (d.projetos || []).some((x) => norm(x) === k) && !vistos.has(chave(d.url))).sort((a, b) => String(b.data || "").localeCompare(String(a.data || "")));
+      const md = [...doCms, ...daBib.slice(0, Math.max(0, 6 - doCms.length))];
+      if (!md.length) return "";
       const card = (d) => {
-        const yt = ytId(d.url), sp = spId(d.url), pod = d.tipo === "podcast";
+        const yt = ytId(d.url), sp = spId(d.url), vm = vmId(d.url), pod = d.tipo === "podcast";
+        const titulo = d.titulo || (pod ? "Episódio do podcast" : "Vídeo do projeto");
         const thumb = d.capa ? wixImage(d.capa, 800) : yt ? `https://i.ytimg.com/vi/${yt}/hqdefault.jpg` : "";
-        const embed = yt ? `https://www.youtube-nocookie.com/embed/${yt}?autoplay=1&rel=0` : sp ? `https://open.spotify.com/embed/episode/${sp}?utm_source=generator` : "";
-        return `<article class="mv${pod ? " pod" : ""}">${embed ? `<button class="mv-ph" data-act="mvid" data-src="${esc(embed)}" data-pod="${pod ? 1 : ""}" aria-label="Tocar ${esc(d.titulo)}">` : `<a class="mv-ph" href="${esc(d.url)}" target="_blank" rel="noopener">`}
+        const embed = yt ? `https://www.youtube-nocookie.com/embed/${yt}?autoplay=1&rel=0` : sp ? `https://open.spotify.com/embed/episode/${sp}?utm_source=generator` : vm ? `https://player.vimeo.com/video/${vm}?autoplay=1` : "";
+        return `<article class="mv${pod ? " pod" : ""}">${embed ? `<button class="mv-ph" data-act="mvid" data-src="${esc(embed)}" data-pod="${pod ? 1 : ""}" aria-label="Tocar ${esc(titulo)}">` : `<a class="mv-ph" href="${esc(d.url)}" target="_blank" rel="noopener">`}
       ${thumb ? `<img src="${esc(thumb)}" alt="" loading="lazy">` : ""}<i>${I.play}</i>${embed ? "</button>" : "</a>"}
-      <div class="mv-txt"><small>${pod ? "Podcast" : "Vídeo"}${d.duracao ? " · " + esc(d.duracao) : ""}</small><b>${esc(d.titulo)}</b></div></article>`;
+      <div class="mv-txt"><small>${pod ? "Podcast" : "Vídeo"}${d.duracao ? " · " + esc(d.duracao) : ""}</small><b>${esc(titulo)}</b></div></article>`;
       };
       return `<section class="psec"><div class="wrap"><header class="shd"><div><p class="kick">Assista e ouça</p><h2 class="t900">Vídeos relacionados</h2></div></header>
-  <div class="mvs">${md.slice(0, 6).map(card).join("")}</div></div></section>`;
+  <div class="mvs">${md.map(card).join("")}</div></div></section>`;
     }
     noticiasHTML(p) {
       const ns = this.noticiasDe(p);
